@@ -1,37 +1,43 @@
-# Aplikasi Peminjaman Buku
+Sistem Informasi Peminjaman Buku Perpustakaan
 
-Aplikasi web berbasis Laravel untuk mengelola data buku dan peminjaman buku perpustakaan sekolah.
+Aplikasi peminjaman buku merupakan sistem berbasis web yang dikembangkan menggunakan Laravel. Aplikasi ini bertujuan untuk membantu proses pengelolaan koleksi buku, data anggota, serta transaksi peminjaman dan pengembalian buku di lingkungan perpustakaan sekolah.
 
-## Deskripsi Program
+1. Gambaran Umum Aplikasi
 
-Aplikasi ini mencatat data buku, data pengguna, dan transaksi peminjaman. Ada dua jenis pengguna, ditentukan kolom `role` pada tabel `users`:
+Sistem ini memiliki tiga tabel utama, yaitu "users", "books", dan "loans". Setiap pengguna mempunyai hak akses berdasarkan nilai pada kolom "role".
 
-- **admin**: mengelola data buku dan peminjaman.
-- **siswa** (default): pengguna yang meminjam buku. Memiliki data `kelas`.
+Jenis pengguna dalam aplikasi:
 
-Alur peminjaman:
+- Admin: bertanggung jawab mengelola informasi buku serta data transaksi peminjaman.
+- Siswa: pengguna yang dapat melakukan peminjaman buku. Akun siswa memiliki informasi tambahan berupa "kelas" dan menjadi role bawaan ketika pengguna dibuat.
 
-1. Siswa meminjam buku, lalu sistem membuat data `loans` dengan `loan_date`, `due_date`, dan `status` bawaan `dipinjam`.
-2. Saat buku dikembalikan, `returned_at` diisi tanggal pengembalian dan `status` diperbarui.
-3. Jika pengembalian melewati `due_date`, denda dicatat pada kolom `fine`.
+Mekanisme Peminjaman
 
-Status pengerjaan saat ini: struktur database (migration) dan model sudah dibuat. Route baru berisi halaman awal, sedangkan controller untuk buku dan peminjaman belum dibuat.
+1. Siswa memilih buku yang akan dipinjam. Sistem kemudian menyimpan transaksi ke tabel "loans", termasuk tanggal peminjaman ("loan_date"), tanggal batas pengembalian ("due_date"), dan status awal "dipinjam".
+2. Ketika buku dikembalikan, sistem mengisi kolom "returned_at" dan mengubah status transaksi.
+3. Apabila buku dikembalikan setelah melewati batas waktu, sistem mencatat jumlah denda pada kolom "fine".
 
-## Fitur
+Perkembangan pengerjaan: Struktur database melalui migration dan model utama sudah dibuat. Namun, route yang tersedia masih sebatas halaman utama. Controller dan tampilan untuk pengelolaan buku serta transaksi peminjaman masih perlu dikembangkan.
 
-- **Books**: data buku (judul, penulis, penerbit, tahun, stok).
-- **Loans**: data peminjaman (tanggal pinjam, batas kembali, tanggal kembali, status, denda).
-- **Users**: pengguna dengan peran dan kelas.
+2. Fitur Utama
 
-## Teknologi
+Modul| Fungsi
+Books| Menyimpan dan mengelola informasi buku, meliputi judul, penulis, penerbit, tahun terbit, dan stok.
+Loans| Mengelola transaksi peminjaman dan pengembalian, termasuk tanggal pinjam, tenggat pengembalian, status, serta denda.
+Users| Menyimpan informasi pengguna, email, password, role, dan kelas siswa.
 
-- PHP & Laravel
-- MySQL (XAMPP)
-- Composer
+3. Teknologi yang Digunakan
 
-## ERD
+- PHP sebagai bahasa pemrograman.
+- Laravel sebagai framework pengembangan aplikasi.
+- MySQL sebagai sistem manajemen database.
+- XAMPP sebagai lingkungan server lokal.
+- Composer untuk mengelola dependency PHP.
 
-```mermaid
+4. Perancangan Database (ERD)
+
+Hubungan antar tabel dalam aplikasi dirancang menggunakan relasi one-to-many. Satu pengguna dapat mempunyai beberapa transaksi peminjaman, begitu pula satu buku dapat tercatat dalam beberapa transaksi.
+
 erDiagram
   USERS ||--o{ LOANS : meminjam
   BOOKS ||--o{ LOANS : dipinjam
@@ -62,177 +68,218 @@ erDiagram
     string status
     int fine
   }
-```
 
-## Dokumentasi Fungsi / Prosedur
+5. Dokumentasi Model dan Fungsi
 
-### Model `Book` (`app/Models/Book.php`)
+A. Model Book ("app/Models/Book.php")
 
-| Elemen | Jenis | Keterangan |
-|--------|-------|------------|
-| `$fillable` | properti | Kolom yang boleh diisi massal: `title`, `author`, `publisher`, `year`, `stock`. |
+Elemen| Jenis| Keterangan
+"$fillable"| Properti| Menentukan atribut yang dapat diisi melalui mass assignment, yaitu "title", "author", "publisher", "year", dan "stock".
 
-### Model `Loan` (`app/Models/Loan.php`)
+B. Model Loan ("app/Models/Loan.php")
 
-| Elemen | Jenis | Parameter | Return | Keterangan |
-|--------|-------|-----------|--------|------------|
-| `$fillable` | properti | - | - | `user_id`, `book_id`, `loan_date`, `due_date`, `returned_at`, `status`, `fine`. |
-| `$casts` | properti | - | - | `loan_date`, `due_date`, `returned_at` otomatis menjadi objek tanggal (Carbon). |
-| `user()` | fungsi relasi | - | `BelongsTo` | Mengambil user peminjam melalui `user_id`. Contoh: `$loan->user->name`. |
-| `book()` | fungsi relasi | - | `BelongsTo` | Mengambil buku yang dipinjam melalui `book_id`. Contoh: `$loan->book->title`. |
+Elemen| Jenis| Parameter| Return| Keterangan
+"$fillable"| Properti| -| -| Memuat kolom "user_id", "book_id", "loan_date", "due_date", "returned_at", "status", dan "fine".
+"$casts"| Properti| -| -| Mengatur agar atribut tanggal dikonversi menjadi objek Carbon secara otomatis.
+"user()"| Relasi| -| "BelongsTo"| Menghubungkan transaksi peminjaman dengan pengguna berdasarkan "user_id". Contoh: "$loan->user->name".
+"book()"| Relasi| -| "BelongsTo"| Menghubungkan transaksi dengan data buku berdasarkan "book_id". Contoh: "$loan->book->title".
 
-### Model `User` (`app/Models/User.php`)
+C. Model User ("app/Models/User.php")
 
-| Elemen | Jenis | Parameter | Return | Keterangan |
-|--------|-------|-----------|--------|------------|
-| `$fillable` | properti | - | - | `name`, `email`, `password`, `role`, `kelas`. |
-| `$hidden` | properti | - | - | `password` dan `remember_token` disembunyikan saat data diubah ke array/JSON. |
-| `casts()` | fungsi | - | `array` | `email_verified_at` menjadi datetime, `password` otomatis di-hash. |
-| `isAdmin()` | fungsi | - | `bool` | `true` jika `role` bernilai `admin`, selain itu `false`. |
+Elemen| Jenis| Parameter| Return| Keterangan
+"$fillable"| Properti| -| -| Memuat atribut "name", "email", "password", "role", dan "kelas".
+"$hidden"| Properti| -| -| Menyembunyikan "password" dan "remember_token" ketika data dikonversi ke array atau JSON.
+"casts()"| Fungsi| -| "array"| Mengatur konversi "email_verified_at" menjadi datetime dan melakukan hashing otomatis pada password.
+"isAdmin()"| Fungsi| -| "bool"| Memeriksa apakah pengguna mempunyai role "admin". Menghasilkan "true" jika sesuai dan "false" jika tidak.
 
-### Route (`routes/web.php`)
+6. Konfigurasi Route
 
-| Method | URL | Proses | Output |
-|--------|-----|--------|--------|
-| GET | `/` | Menjalankan closure | Menampilkan view `welcome` |
+Pada tahap pengerjaan saat ini, file "routes/web.php" masih memiliki satu route utama.
 
-## Debugging
+Method| URL| Proses| Hasil
+GET| "/"| Menjalankan closure| Memanggil halaman "welcome".
 
-### Temuan pada kode saat ini
+Route tambahan untuk pengelolaan buku dan transaksi peminjaman belum diimplementasikan.
 
-| No | Masalah | Dampak | Perbaikan |
-|----|---------|--------|-----------|
-| 1 | Model `Book` belum punya relasi ke `Loan`. | `$book->loans` menghasilkan error karena relasi tidak ditemukan. | Tambahkan `hasMany` (lihat di bawah). |
-| 2 | Model `User` belum punya relasi ke `Loan`. | `$user->loans` tidak bisa dipakai untuk riwayat pinjam siswa. | Tambahkan `hasMany` (lihat di bawah). |
-| 3 | Belum ada controller dan route untuk books dan loans. | Fitur belum bisa diakses dari browser. | Buat `BookController` dan `LoanController`, lalu daftarkan di `routes/web.php`. |
-| 4 | Nilai `status` ditulis sebagai string bebas. | Mudah typo (`dikembalikan` vs `dikembalikan `) sehingga filter tidak cocok. | Gunakan konstanta atau enum PHP. |
-| 5 | Stok belum terhubung dengan peminjaman. | Stok bisa tidak sinkron atau minus. | Kurangi stok saat pinjam, tambah saat kembali, di dalam `DB::transaction()`. |
+7. Hasil Pemeriksaan dan Debugging
 
-Perbaikan temuan 1 dan 2:
+Berdasarkan pemeriksaan struktur program, ditemukan beberapa bagian yang masih perlu disempurnakan.
 
-```php
-// app/Models/Book.php
+A. Temuan dan Solusi
+
+No.| Temuan| Pengaruh| Solusi yang Disarankan
+1| Model "Book" belum memiliki relasi menuju "Loan".| Pemanggilan "$book->loans" tidak dapat dilakukan.| Menambahkan relasi "hasMany".
+2| Model "User" belum mempunyai relasi menuju "Loan".| Riwayat peminjaman pengguna belum dapat diakses melalui relasi.| Menambahkan fungsi "loans()".
+3| Controller dan route buku maupun peminjaman belum tersedia.| Pengguna belum dapat mengakses fitur tersebut melalui browser.| Membuat "BookController" dan "LoanController".
+4| Status transaksi masih menggunakan teks biasa.| Berpotensi terjadi kesalahan penulisan status.| Menggunakan konstanta atau enum PHP.
+5| Pengelolaan stok belum terintegrasi dengan transaksi.| Jumlah stok dapat menjadi tidak sesuai.| Menggunakan "DB::transaction()" saat peminjaman dan pengembalian.
+
+B. Penambahan Relasi Model
+
+Berikut kode yang dapat digunakan untuk melengkapi hubungan antarmodel.
+
+File "app/Models/Book.php"
+
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 public function loans(): HasMany
 {
     return $this->hasMany(Loan::class);
 }
-```
 
-```php
-// app/Models/User.php
+File "app/Models/User.php"
+
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 public function loans(): HasMany
 {
     return $this->hasMany(Loan::class);
 }
-```
 
-### Error umum dan solusinya
+C. Error yang Berpotensi Terjadi
 
-| Error | Penyebab | Solusi |
-|-------|----------|--------|
-| `Base table or view not found` / `Failed to open the referenced table` saat migrate | Migration `loans` berjalan sebelum `users` atau `books` karena timestamp nama file lebih awal. | Pastikan nama file migration `loans` punya timestamp paling akhir, lalu `php artisan migrate:fresh`. |
-| `SQLSTATE[23000]: Integrity constraint violation` | `user_id` atau `book_id` yang dimasukkan tidak ada di tabel induk. | Pastikan data user dan buku sudah ada sebelum membuat peminjaman. |
-| `MassAssignmentException` | Kolom belum ada di `$fillable`. | Tambahkan kolom ke `$fillable` pada model. |
-| `Call to undefined relationship` | Relasi belum didefinisikan di model. | Tambahkan fungsi relasi (lihat perbaikan di atas). |
-| `Class "App\Models\Loan" not found` | Namespace atau nama file salah. | Cek `namespace` dan nama file, lalu `composer dump-autoload`. |
+Pesan Error| Kemungkinan Penyebab| Langkah Penanganan
+"Base table or view not found" / "Failed to open the referenced table"| Urutan migration tidak sesuai dengan hubungan tabel.| Pastikan migration "loans" dijalankan setelah "users" dan "books", kemudian gunakan "php artisan migrate:fresh".
+"SQLSTATE[23000]: Integrity constraint violation"| ID pengguna atau buku yang dimasukkan tidak ditemukan pada tabel induk.| Pastikan data terkait sudah tersedia sebelum transaksi dibuat.
+"MassAssignmentException"| Atribut yang akan disimpan belum terdaftar pada "$fillable".| Periksa dan lengkapi "$fillable" pada model terkait.
+"Call to undefined relationship"| Fungsi relasi belum didefinisikan pada model.| Tambahkan relasi sesuai kebutuhan.
+"Class "App\Models\Loan" not found"| Nama file, class, atau namespace tidak sesuai.| Periksa lokasi file dan jalankan "composer dump-autoload".
 
-### Cara melacak bug
+D. Teknik Pemeriksaan Kesalahan
 
-- Cetak nilai variabel: `dd($loan);` atau `dump($request->all());`
-- Catat ke log: `Log::info('data pinjam', $data);`, lalu baca `storage/logs/laravel.log`.
-- Cek daftar route: `php artisan route:list`
-- Cek status migration: `php artisan migrate:status`
-- Uji model lewat console: `php artisan tinker`, misalnya `App\Models\Loan::with('user','book')->first();`
-- Aktifkan `APP_DEBUG=true` di `.env` saat pengembangan agar pesan error lengkap tampil.
+Beberapa perintah yang dapat digunakan untuk membantu menemukan sumber masalah:
 
-## Instalasi
+- "dd($loan);" untuk melihat isi variabel secara langsung.
+- "dump($request->all());" untuk memeriksa data yang diterima dari request.
+- "Log::info('data pinjam', $data);" untuk menyimpan informasi ke log aplikasi.
+- "php artisan route:list" untuk melihat seluruh route yang terdaftar.
+- "php artisan migrate:status" untuk memeriksa status migration.
+- "php artisan tinker" untuk menjalankan pengujian model melalui console.
 
-1. Clone repository
+Contoh pengujian relasi:
 
-   ```bash
-   git clone https://github.com/kalilasyifazzahra/peminjaman-buku.git
-   cd peminjaman-buku
-   ```
+App\Models\Loan::with('user', 'book')->first();
 
-2. Install dependency
+Selama proses pengembangan, "APP_DEBUG=true" pada file ".env" dapat digunakan agar informasi error lebih lengkap ditampilkan.
 
-   ```bash
-   composer install
-   ```
+8. Panduan Instalasi dan Menjalankan Aplikasi
 
-3. Salin file environment dan generate key
+Langkah 1. Mengunduh Project
 
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+Clone repository dari GitHub menggunakan perintah:
 
-4. Buat database (misalnya `peminjaman_buku`) di phpMyAdmin, lalu atur `.env`
+git clone https://github.com/kalilasyifazzahra/peminjaman-buku.git
+cd peminjaman-buku
 
-   ```env
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=peminjaman_buku
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
+Langkah 2. Memasang Dependency
 
-5. Jalankan migrasi
+Jalankan Composer untuk menginstal seluruh kebutuhan aplikasi.
 
-   ```bash
-   php artisan migrate
-   ```
+composer install
 
-6. Jalankan aplikasi
+Langkah 3. Menyiapkan Environment
 
-   ```bash
-   php artisan serve
-   ```
+Salin file konfigurasi environment dan buat application key.
 
-   Buka `http://127.0.0.1:8000` di browser.
-   
-## Database
+cp .env.example .env
+php artisan key:generate
 
-File database tersedia di `database/peminjaman_buku.sql`.
-Import lewat phpMyAdmin (tab Import), atau jalankan `php artisan migrate`.
-## Laporan Evaluasi
+Langkah 4. Membuat Database
 
-### Tujuan
-Membuat aplikasi berbasis Laravel untuk mengelola data buku dan transaksi peminjaman buku perpustakaan.
+Buat database dengan nama "peminjaman_buku" melalui phpMyAdmin. Setelah itu, sesuaikan konfigurasi database pada ".env".
 
-### Hasil yang Dicapai
-- Perancangan database: tabel `users`, `books`, dan `loans` beserta ERD (relasi one-to-many).
-- Migration dan model `Book`, `Loan`, `User`, dengan relasi `Loan` ke `User` dan `Book`.
-- Pembedaan peran pengguna lewat kolom `role` (`admin` dan `siswa`).
-- Dokumentasi: deskripsi program, dokumentasi fungsi, dan panduan debugging.
-- File database `database/peminjaman_buku.sql`.
-- Project tersimpan di GitHub.
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=peminjaman_buku
+DB_USERNAME=root
+DB_PASSWORD=
 
-### Kendala
-- Push ke GitHub sempat gagal (`Repository not found` dan `rejected`), diselesaikan dengan memperbaiki remote dan `git pull --rebase`.
-- Urutan migration perlu dicek agar tabel `loans` dibuat setelah `users` dan `books`.
+Langkah 5. Menjalankan Migration
 
-### Kekurangan
-- Controller, route, dan tampilan untuk books dan loans belum dibuat.
-- Relasi `loans()` pada model `Book` dan `User` belum ada.
-- Logika stok dan perhitungan denda belum diimplementasikan.
-- Belum ada pengujian fitur.
+Gunakan perintah berikut untuk membuat tabel berdasarkan file migration.
 
-### Rencana Perbaikan
-1. Tambahkan relasi `hasMany` pada `Book` dan `User`.
-2. Buat `BookController` (CRUD) dan `LoanController` (pinjam, kembali, denda).
-3. Kurangi stok saat pinjam dan tambah saat kembali, di dalam `DB::transaction()`.
-4. Gunakan konstanta atau enum untuk `status`.
-5. Tambahkan login dan pembatasan akses admin lewat `isAdmin()`.
+php artisan migrate
 
-### Kesimpulan
-Fondasi aplikasi (struktur database, model, dan dokumentasi) sudah selesai. Tahap berikutnya adalah mengimplementasikan fitur utama agar aplikasi dapat digunakan.
+Langkah 6. Menjalankan Server
 
-## Lisensi
+Setelah konfigurasi selesai, jalankan aplikasi dengan perintah:
 
-Proyek ini menggunakan lisensi [MIT](https://opensource.org/licenses/MIT).
+php artisan serve
+
+Aplikasi dapat diakses melalui alamat:
+
+"http://127.0.0.1:8000"
+
+9. Pengelolaan Database
+
+Project menyediakan file database dengan nama "database/peminjaman_buku.sql".
+
+Terdapat dua cara untuk menyiapkan database:
+
+1. Melakukan import file SQL melalui menu Import di phpMyAdmin.
+2. Menggunakan migration Laravel melalui perintah "php artisan migrate".
+
+Gunakan salah satu metode sesuai kondisi database yang tersedia.
+
+10. Evaluasi Pengerjaan
+
+A. Tujuan Pengembangan
+
+Membangun aplikasi perpustakaan berbasis web menggunakan Laravel yang dapat membantu pengelolaan informasi buku, anggota perpustakaan, dan aktivitas peminjaman.
+
+B. Capaian Pengerjaan
+
+Beberapa bagian yang telah berhasil diselesaikan antara lain:
+
+- Membuat rancangan database dengan tiga tabel utama, yaitu "users", "books", dan "loans".
+- Menyusun ERD untuk menggambarkan hubungan antartabel.
+- Membuat migration serta model "Book", "Loan", dan "User".
+- Menyiapkan relasi "Loan" dengan model "User" dan "Book".
+- Menentukan pembagian hak akses pengguna melalui atribut "role".
+- Menyusun dokumentasi program, fungsi model, dan panduan penanganan error.
+- Menyediakan file database SQL.
+- Menyimpan source code project pada repository GitHub.
+
+C. Kendala Selama Pengerjaan
+
+Dalam proses pengembangan, terdapat beberapa kendala teknis, di antaranya:
+
+- Proses push ke GitHub sempat mengalami masalah "Repository not found" dan "rejected".
+- Permasalahan Git diselesaikan dengan memperbaiki konfigurasi remote repository dan menjalankan "git pull --rebase".
+- Pengaturan urutan migration perlu diperhatikan agar tabel yang saling berhubungan dapat dibuat tanpa kesalahan.
+
+D. Bagian yang Masih Perlu Dikembangkan
+
+Walaupun fondasi aplikasi telah tersedia, masih terdapat beberapa pekerjaan yang belum diselesaikan:
+
+- Pembuatan controller, route, dan halaman untuk modul buku serta peminjaman.
+- Penambahan relasi "hasMany" pada model "Book" dan "User".
+- Penerapan sistem pengurangan dan penambahan stok secara otomatis.
+- Implementasi perhitungan denda keterlambatan.
+- Penggunaan konstanta atau enum untuk menjaga konsistensi status transaksi.
+- Penerapan autentikasi dan pembatasan hak akses khusus admin.
+- Pengujian terhadap fungsi-fungsi aplikasi.
+
+E. Rencana Pengembangan Selanjutnya
+
+Untuk menyempurnakan aplikasi, beberapa langkah yang direncanakan adalah:
+
+1. Melengkapi relasi antar-model menggunakan "hasMany".
+2. Mengembangkan "BookController" untuk proses CRUD data buku.
+3. Membuat "LoanController" untuk menangani peminjaman, pengembalian, dan perhitungan denda.
+4. Mengintegrasikan perubahan stok menggunakan "DB::transaction()".
+5. Menyeragamkan status transaksi menggunakan konstanta atau enum.
+6. Menambahkan sistem login serta pembatasan akses admin melalui fungsi "isAdmin()".
+
+11. Kesimpulan
+
+Pengembangan aplikasi peminjaman buku telah mencapai tahap penyusunan fondasi utama, meliputi perancangan database, pembuatan migration, model, serta dokumentasi teknis. Struktur tersebut menjadi dasar untuk membangun sistem perpustakaan yang lebih lengkap.
+
+Meskipun demikian, beberapa fitur inti seperti pengelolaan buku, transaksi peminjaman, pengembalian, dan perhitungan denda masih membutuhkan implementasi lanjutan. Dengan menyelesaikan bagian tersebut, aplikasi diharapkan dapat berfungsi secara optimal dan membantu kegiatan administrasi perpustakaan sekolah.
+
+12. Lisensi
+
+Project ini menggunakan lisensi MIT License, yang memungkinkan penggunaan, pengembangan, dan modifikasi kode sesuai ketentuan lisensi.
+
+Informasi lisensi dapat dilihat melalui: https://opensource.org/licenses/MIT
